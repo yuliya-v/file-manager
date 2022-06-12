@@ -7,13 +7,13 @@ import { rm } from 'fs/promises';
 
 export const zip = async (input, output, operation) => {
 
-  if (!input && !output) {
+  if (!input || !output) {
     console.log('Invalid input: missing arguments');
     return;
   }
 
   const inputFile = getAbsolutePath(input);
-  const outputDir = output === undefined ? state.currentDir : getAbsolutePath(output);
+  const outputDir = getAbsolutePath(output);
 
   const outputFile = path.join(
     outputDir, 
@@ -27,21 +27,18 @@ export const zip = async (input, output, operation) => {
   const brotli = operation === 'compress'
     ? createBrotliCompress()
     : createBrotliDecompress();
-
-  readStream.on('error', (err) => {
-    console.log(err.code, 'Operation failed: non-existent file');
-    writeStream.destroy();
-    rm(outputFile);
-  });
-
-  writeStream.on('error', (err) => {
-    console.log(err.code, 'Operation failed: non-existent path');
-    readStream.destroy();
-  });
   
   pipeline(
     readStream,
     brotli,
-    writeStream
+    writeStream,
+    async (err) => {
+      if (err) {
+        console.log('Operation failed');
+        try { 
+          await rm(outputFile);
+        } catch {} 
+      }
+    }
   );
 }

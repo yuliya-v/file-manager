@@ -24,8 +24,14 @@ const getAbsolutePath = (input) => path.isAbsolute(input)
   : path.join(state.currentDir, input);
 
 const cd = async (arg) => {
+  if (!arg) {
+    state.currentDir = homeDir;
+    stdout.write(`You are currently in ${homeDir}` + EOL);
+    return;
+  }
+
   const absPath = getAbsolutePath(arg);
-  if (!arg || absPath.length < homeDir.length) {
+  if (absPath.length < homeDir.length) {
     stdout.write(`You are currently in ${state.currentDir}` + EOL);
     return
   }
